@@ -25,22 +25,19 @@ pipeline {
     }
 
     stage('Deploy to K8s') {
-      steps {
-        script {
-          sh '''
-            apt update && apt install -y curl apt-transport-https gnupg lsb-release
-            curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-            echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
-            apt update && apt install -y kubectl
+  steps {
+    script {
+      sh '''
+        curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl && mv kubectl /usr/local/bin/
 
-            kubectl version --client
-            kubectl create ns ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
-            kubectl apply -f k8s.yaml -n ${NAMESPACE}
-          '''
-        }
-      }
+        kubectl version --client
+        kubectl create ns ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+        kubectl apply -f k8s.yaml -n ${NAMESPACE}
+      '''
     }
   }
+}
 
   post {
     success {
