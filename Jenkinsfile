@@ -18,7 +18,7 @@ pipeline {
         expression { return false }  // Skip if using local Docker socket
       }
       steps {
-        // Add push to registry here
+        echo "Push skipped due to local Docker usage"
       }
     }
 
@@ -35,6 +35,9 @@ pipeline {
   post {
     success {
       echo "✅ Web page deployed!"
+    }
+    failure {
+      echo "❌ Deployment failed."
     }
   }
 }
