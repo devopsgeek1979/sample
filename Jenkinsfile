@@ -9,13 +9,15 @@ pipeline {
   stages {
     stage('Build Docker Image') {
       steps {
-        sh 'docker build -t $IMAGE .'
+        script {
+          sh "docker build -t ${env.IMAGE} ."
+        }
       }
     }
 
     stage('Push Image (optional)') {
       when {
-        expression { return false }  // Skip if using local Docker socket
+        expression { return false } // Set to true if you want to push to a registry
       }
       steps {
         echo "Push skipped due to local Docker usage"
@@ -23,20 +25,22 @@ pipeline {
     }
 
     stage('Deploy to K8s') {
-  steps {
-    sh '''
-      apt update && apt install -y curl apt-transport-https gnupg && \
-      curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
-      echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list && \
-      apt update && apt install -y kubectl
+      steps {
+        script {
+          sh '''
+            apt update && apt install -y curl apt-transport-https gnupg lsb-release
+            curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+            echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
+            apt update && apt install -y kubectl
 
-      kubectl version --client
-      kubectl create ns $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-      kubectl apply -f k8s.yaml -n $NAMESPACE
-    '''
+            kubectl version --client
+            kubectl create ns ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+            kubectl apply -f k8s.yaml -n ${NAMESPACE}
+          '''
+        }
+      }
+    }
   }
-}
-
 
   post {
     success {
